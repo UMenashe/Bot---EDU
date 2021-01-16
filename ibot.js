@@ -115,9 +115,9 @@ function findLesson(channelM, everyone) {
         }
 
         if (time % 100 == '0') {
-            time = `${Math.floor(time / 10 / 10)}:${time % 20}0`;
+            time = `${Math.floor(time / 10 / 10)}:${time % 100}0`;
         } else {
-            time = `${Math.floor(time / 10 / 10)}:${time % 20}`;
+            time = `${Math.floor(time / 10 / 10)}:${time % 100}`;
         }
 
         build(Lesson, zoomUrl, zoomUrl2, time, type, channelM, everyone);
