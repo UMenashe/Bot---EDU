@@ -5,7 +5,7 @@ let CapsulesImg =  ["https://i.imgur.com/9SWX8xs.jpg","https://i.imgur.com/AzaiO
 let reactionY = { '📁': 'גמרא', '📂': 'אנגלית', '📖': 'מחשבת ישראל', '📚':'ספרות'};
 let reactionR = { 'גמרא': '📁', 'אנגלית': '📂', 'מחשבת ישראל': '📖', 'ספרות':'📚' };
 
-require('dotenv').config();
+
 const Discord = require('discord.js');
 const axios = require('axios');
 const FormData = require('form-data');
