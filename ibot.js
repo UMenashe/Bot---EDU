@@ -1,7 +1,5 @@
-﻿let img = ['https://i.imgur.com/t1j6yfU.jpg', 'https://i.imgur.com/8EXsXYn.jpg', 'https://i.imgur.com/oEEFFgP.jpg', 'https://i.imgur.com/LLb66t1.jpg', 'https://i.imgur.com/Jv96C6P.jpg', 'https://i.imgur.com/ZBOZLal.jpg', 'https://i.imgur.com/8MVf6Pz.jpg'];
-let img1;
+﻿let img1;
 let result2;
-let CapsulesImg =  ["https://i.imgur.com/9SWX8xs.jpg","https://i.imgur.com/AzaiOUb.jpg"];
 let reactionY = { '📁': 'גמרא', '📂': 'אנגלית', '📖': 'מחשבת ישראל', '📚':'ספרות'};
 let reactionR = { 'גמרא': '📁', 'אנגלית': '📂', 'מחשבת ישראל': '📖', 'ספרות':'📚' };
 
@@ -258,7 +256,7 @@ client.on('message', msg => {
 
         if (msg.content === 'המערכת של היום' || msg.content === 'מערכת להיום' || msg.content === 'המערכת להיום' || msg.content === 'מערכת של היום') {
             let dateimg = new Date();
-            let img1 = img[dateimg.getDay()];
+            let img1 = botData.img[dateimg.getDay()];
             const EmbedImg = new Discord.MessageEmbed()
                 .setImage(img1)
             msg.channel.send(EmbedImg);
@@ -269,9 +267,9 @@ client.on('message', msg => {
             dateimg = dateimg.getDay();
             if (dateimg === 6) {
                 dateimg = 0;
-                img1 = img[dateimg];
+                img1 = botData.img[dateimg];
             } else {
-                img1 = img[dateimg + 1];
+                img1 = botData.img[dateimg + 1];
             }
             const EmbedImg = new Discord.MessageEmbed()
                 .setImage(img1)
@@ -279,7 +277,7 @@ client.on('message', msg => {
         }
 
         if (msg.content === 'קפסולות') {
-            for (let img of CapsulesImg) {
+            for (let img of botData.CapsulesImg) {
                 const EmbedCapsules = new Discord.MessageEmbed()
                     .setImage(img)
                 msg.channel.send(EmbedCapsules);
@@ -293,9 +291,9 @@ client.on('message', msg => {
             let strC = msg.content;
             strC = strC.replace("קפסולה ", "");
             if (strC === 'א') {
-                imgA = CapsulesImg[0];
+                imgA = botData.CapsulesImg[0];
             } else if (strC === 'ב') {
-                imgA = CapsulesImg[1];
+                imgA = botData.CapsulesImg[1];
             } else {
                 msg.reply('הכנס קפסולה נכונה');
                 return;
