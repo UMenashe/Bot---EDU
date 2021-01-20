@@ -1,14 +1,14 @@
-﻿let img1;
+let img1;
 let result2;
 let reactionY = { '📁': 'גמרא', '📂': 'אנגלית', '📖': 'מחשבת ישראל', '📚':'ספרות'};
 let reactionR = { 'גמרא': '📁', 'אנגלית': '📂', 'מחשבת ישראל': '📖', 'ספרות':'📚' };
-
 
 const Discord = require('discord.js');
 const axios = require('axios');
 const FormData = require('form-data');
 const cron = require('cron');
 const firebase = require('firebase');
+const fetch = require('node-fetch');
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASEKEY,
@@ -42,18 +42,23 @@ botData = data.val();
  console.log(err);
  }
 
+ let channelM = client.channels.cache.get('779330728608792579');
+
 let scheduledMessage = new cron.CronJob('29 9-16 * * 1', () => {
-    let channelM = client.channels.cache.get('779330728608792579');
     let everyone = true;
     findLesson(channelM, everyone);
 });
 let scheduledMessage2 = new cron.CronJob('14 9-15 * * 3,4,0', () => {
-    let channelM = client.channels.cache.get('779330728608792579');
     let everyone = true;
     findLesson(channelM, everyone);
 });
+
+let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
+    sendGif('Good Morning');
+});
 scheduledMessage.start();
 scheduledMessage2.start();
+scheduledMessage3.start();
 
 function buildTest(date, type, material, heDate, msg) {
     const EmbedTest = new Discord.MessageEmbed()
@@ -68,6 +73,16 @@ function buildTest(date, type, material, heDate, msg) {
         await embedMessage.react(e);
     });
 }
+
+async function sendGif(KeyWord){
+    let tenorAPI = `https://api.tenor.com/v1/search?q=${KeyWord}&key=${process.env.TENORKEY}&contentfilter=high`;
+    let response = await fetch(tenorAPI);
+    let json = await response.json();
+    let index = Math.floor(Math.random()* json.results.length);
+    channelM.send('בוקר טוב!');
+    channelM.send(json.results[index].url);
+}
+
 function Capsules(id) {
     let T;
     for (let S of botData.student) {
@@ -345,7 +360,6 @@ client.on('message', msg => {
 
         }
 
-       
         if ((/^[0-9]/).test(msg.content)) {
             if (msg.content.split(" ").includes('המבחנים') === true) {
                 let index = msg.content.replace("המבחנים הבאים", "");
@@ -388,12 +402,12 @@ client.on('message', msg => {
         }
         
         
-        if (msg.content === '!stop msg' && msg.author.id === '682520312818302987') {
+        if (msg.content === '!stop msg') {
             scheduledMessage.stop();
             scheduledMessage2.stop();
             msg.reply('scheduled Message stopped');
         }
-        if (msg.content === '!start msg' && msg.author.id === '682520312818302987' ) {
+        if (msg.content === '!start msg' ) {
             scheduledMessage.start();
             scheduledMessage2.start();
             msg.reply('scheduled Message Started');
