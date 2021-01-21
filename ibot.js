@@ -42,19 +42,20 @@ botData = data.val();
  console.log(err);
  }
 
- let channelM = client.channels.cache.get('779330728608792579');
+ 
 
 let scheduledMessage = new cron.CronJob('29 9-16 * * 1', () => {
-    let everyone = true;
-    findLesson(channelM, everyone);
+    let channelM = client.channels.cache.get('779330728608792579');
+    findLesson(channelM, true);
 });
 let scheduledMessage2 = new cron.CronJob('14 9-15 * * 3,4,0', () => {
-    let everyone = true;
-    findLesson(channelM, everyone);
+    let channelM = client.channels.cache.get('779330728608792579');
+    findLesson(channelM, true);
 });
 
 let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
-    sendGif('Good Morning');
+    let channelM = client.channels.cache.get('779330728608792579');
+    sendGif('Good Morning',channelM);
 });
 scheduledMessage.start();
 scheduledMessage2.start();
@@ -74,7 +75,7 @@ function buildTest(date, type, material, heDate, msg) {
     });
 }
 
-async function sendGif(KeyWord){
+async function sendGif(KeyWord,channelM){
     let tenorAPI = `https://api.tenor.com/v1/search?q=${KeyWord}&key=${process.env.TENORKEY}&contentfilter=high`;
     let response = await fetch(tenorAPI);
     let json = await response.json();
@@ -235,8 +236,7 @@ client.on('message', msg => {
         if (msg.author.bot) return;
         if (msg.content == 'השיעור הבא' || msg.content == 'שיעור הבא' || msg.content == 'מה השיעור הבא') {
             channelM = msg.channel;
-            let everyone = false;
-            findLesson(channelM, everyone);
+            findLesson(channelM, false);
         }
 
         if (msg.content.startsWith('טל')) {
