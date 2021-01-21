@@ -109,7 +109,8 @@ function findLesson(channelM, everyone) {
         let time;
 
         for (let hour of botData.Schedule[date.getDay()]) {
-            if (code < hour.time) {
+
+            if (code < hour.time.replace(":", "")) {
                 if (hour.ZoomUrl > '') {
                     Lesson = hour.Lesson;
                     zoomUrl = hour.ZoomUrl;
@@ -126,12 +127,6 @@ function findLesson(channelM, everyone) {
             if (Lesson > '') {
                 break;
             }
-        }
-
-        if (time % 100 == '0') {
-            time = `${Math.floor(time / 10 / 10)}:${time % 100}0`;
-        } else {
-            time = `${Math.floor(time / 10 / 10)}:${time % 100}`;
         }
 
         build(Lesson, zoomUrl, zoomUrl2, time, type, channelM, everyone);
@@ -414,6 +409,7 @@ client.on('message', msg => {
         }
 
         
+
         if (!(/[\u0590-\u05FF]/).test(msg.content)) {
             data = new FormData();
             data.append('text', msg.content);
