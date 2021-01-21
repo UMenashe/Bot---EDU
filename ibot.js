@@ -110,7 +110,7 @@ function findLesson(channelM, everyone) {
 
         for (let hour of botData.Schedule[date.getDay()]) {
 
-            if (code < hour.time.replace(":", "")) {
+            if (code < parseInt(hour.time.replace(":", ""))) {
                 if (hour.ZoomUrl > '') {
                     Lesson = hour.Lesson;
                     zoomUrl = hour.ZoomUrl;
