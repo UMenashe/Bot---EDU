@@ -341,7 +341,7 @@ client.on('message', msg => {
             }
         }
 
-        if (msg.content === 'המבחן הבא') {
+        if (msg.content === 'המבחן הבא'|| msg.content === 'מבחן הבא') {
             
             if (botData.tests.length <= 0) {
                 msg.channel.send('אין מבחנים קרובים');
@@ -377,7 +377,7 @@ client.on('message', msg => {
                 }
             }
         }
-        if (msg.content === 'כל המבחנים הקרובים' || msg.content === 'כל המבחנים הבאים') {
+        if (msg.content === 'כל המבחנים הקרובים' || msg.content === 'כל המבחנים הבאים'|| msg.content === 'המבחנים הבאים') {
            
             if (botData.tests.length <= 0) {
                 msg.channel.send('אין מבחנים קרובים');
