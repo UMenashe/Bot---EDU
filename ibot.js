@@ -9,7 +9,6 @@ const FormData = require('form-data');
 const cron = require('cron');
 const firebase = require('firebase');
 const fetch = require('node-fetch');
-const fs = require('fs');
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASEKEY,
@@ -33,9 +32,6 @@ function readyDiscord() {
     console.log('bot ready');
 }
 
-let botData;
-
-let bookData = JSON.parse(fs.readFileSync('./BookData.json'));
 
 function getData(data){
 botData = data.val();
@@ -65,7 +61,7 @@ scheduledMessage2.start();
 scheduledMessage3.start();
 
 async function getBook(profession){
-    return bookData.BookData[profession];
+    return botData.BookData[profession];
 }
 
  function getBookObj(book_name,list_books){
