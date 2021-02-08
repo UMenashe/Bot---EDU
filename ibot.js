@@ -9,6 +9,7 @@ const FormData = require('form-data');
 const cron = require('cron');
 const firebase = require('firebase');
 const fetch = require('node-fetch');
+const mashov = require('mashov-api');
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASEKEY,
@@ -27,6 +28,8 @@ client.login(process.env.BOTTOKEN);
 client.on('ready', readyDiscord);
 
 firebase.database().ref('/').on('value',getData,errData);
+
+let loginInfo =  mashov.loginToMashov(442319, 2021, "325949626", "Menashe325");
 
 function readyDiscord() {
     console.log('bot ready');
@@ -477,6 +480,23 @@ client.on('message', msg  =>  {
             }
         }
         
+       if(msg.content === '!getinbox' && mag.author.id == '682520312818302987'){
+        (async () =>{
+            let mail = await mashov.getMail(loginInfo, 1);
+            let mailbody = await mashov.getMailBody(loginInfo,mail[0].conversationId);
+            let title = mailbody.subject;
+            let content = (mailbody.messages.body).replace(/<[^>]+>/g, '');
+              let arrfiles = [];
+            if(mailbody.hasDrafts){
+                for(let i = 0 ; i<mailbody.messages.files.length ; i++ ){
+                    let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages.files[i].ownerGroup}/files/${mailbody.messages.files[i].fileId}/download/${mailbody.messages.files[i].fileName}`;
+                    arrfiles.push(url);
+                }
+            }
+                 const attachment = new MessageAttachment(arrfiles);
+                msg.channel.send(`**${title}** \n ${content}`,attachment);
+        })()
+       }
         
         if (msg.content === '!stop msg') {
             scheduledMessage.stop();
