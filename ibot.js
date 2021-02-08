@@ -9,13 +9,14 @@ const FormData = require('form-data');
 const cron = require('cron');
 const firebase = require('firebase');
 const fetch = require('node-fetch');
+const fs = require('fs');
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASEKEY,
-    authDomain: "schedule-b5d1b.firebaseapp.com",
-    databaseURL: "https://schedule-b5d1b-default-rtdb.firebaseio.com",
-    projectId: "schedule-b5d1b",
-    storageBucket: "schedule-b5d1b.appspot.com",
+    authDomain: process.env.AUTHDOMAIN,
+    databaseURL: process.env.DATABASEURL,
+    projectId: process.env.PROJECTID,
+    storageBucket: process.env.STORAGEBUCKET,
     messagingSenderId: process.env.SENDERID,
     appId: process.env.APPID,
     measurementId: process.env.MEASUREMENTID
@@ -33,6 +34,8 @@ function readyDiscord() {
 }
 
 let botData;
+
+let bookData = JSON.parse(fs.readFileSync('./BookData.json'));
 
 function getData(data){
 botData = data.val();
@@ -60,6 +63,35 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
 scheduledMessage.start();
 scheduledMessage2.start();
 scheduledMessage3.start();
+
+async function getBook(profession){
+    return bookData.BookData[profession];
+}
+
+ function getBookObj(book_name,list_books){
+    let arr = [];
+    for(let book of list_books){
+        if(book.Title.search(book_name) === 0){
+            arr.push(book);
+        }
+    }
+    return arr[0];
+}
+
+async function GetSolutions(bookObj,page,question) {
+    let promis = await fetch('https://tiktek.com/il/services/SolutionSearch.asmx/GetSolutionsEx',{
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept-Language':'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept':'application/json, text/javascript, */*; q=0.01',
+        },
+        body: JSON.stringify({bookID: bookObj.ID, page: page, question: question, sq: null, ssq: null, userID: null})
+    })
+    let json = await promis.json();
+    return json;
+}
+
 
 function buildTest(date, type, material, heDate, msg) {
     const EmbedTest = new Discord.MessageEmbed()
@@ -134,9 +166,7 @@ function findLesson(channelM, everyone) {
 }
 function build(Lesson, zoomUrl, zoomUrl2, time, type, channelM, everyone) {
     let str = '';
-    if (everyone) {
-        str = '@everyone';
-    }
+   
 const EmbedZoom = new Discord.MessageEmbed()
     .setColor('#0099ff')
     .setTitle('הקישור לזום')
@@ -226,7 +256,7 @@ client.on('messageReactionAdd', (reaction, user) => {
         }
     }
 });
-client.on('message', msg => {
+client.on('message', msg  =>  {
     try {
         if (msg.author.bot) return;
         if (msg.content == 'השיעור הבא' || msg.content == 'שיעור הבא' || msg.content == 'מה השיעור הבא') {
@@ -285,6 +315,61 @@ client.on('message', msg => {
                 .setImage(img1)
             msg.channel.send(EmbedImg);
         }
+
+          if(msg.content.startsWith('תיקתק')){
+              let key = msg.content.replace("תיקתק ", "");
+              key = key.split('-');
+              (async() => {
+                let list_books;
+                list_books = await getBook(key[0]);
+                let bookObj = getBookObj(key[1],list_books);
+
+                const tiktekEmbed = new Discord.MessageEmbed()
+                  .setTitle("הכנס: מספר עמוד,שאלה")
+                  .setAuthor('Tiktek', `https://is5-ssl.mzstatic.com/image/thumb/Purple113/v4/7f/e6/8e/7fe68e14-8042-db6b-bd8b-1a61dee410d7/source/512x512bb.png`)
+                  .setThumbnail(`${bookObj.Image}`)
+                  .setColor('#355D8D')
+                  .addFields(
+                    { name: 'עמודים', value: `${bookObj.PMin}-${bookObj.PMax}`, inline: true },
+                    { name: 'מוציא לאור', value: `${bookObj.Pub}`, inline: true },
+                )
+                msg.channel.send(tiktekEmbed);
+
+                msg.channel.awaitMessages(async m =>  m.author.id == msg.author.id,
+                    {max: 1, time: 30000}).then(async collected  => {
+                        let page = collected.first().content.split(',')[0];
+                        let section = collected.first().content.split(',')[1];
+                            if (page != null) {
+                  let solutions =  await GetSolutions(bookObj,page,section);
+               if(solutions.d.ResultData.length === 0){
+                msg.channel.send("לא נמצאו פתרונות");
+               }else {
+                let urlimg = [];
+                let urlS;
+                   for(let data of solutions.d.ResultData){
+                    const tiktekEmbed = new Discord.MessageEmbed()
+                  .setTitle(`פתרון לעמוד ${data.Page} שאלה ${data.Question}`)
+                  .setAuthor('Tiktek', `https://is5-ssl.mzstatic.com/image/thumb/Purple113/v4/7f/e6/8e/7fe68e14-8042-db6b-bd8b-1a61dee410d7/source/512x512bb.png`)
+                  .setImage(`https://tiktek.com/il/tt-resources/solution-images/${data.Prefix}_${data.BookID}/${data.Image}`)
+                  .setColor('#355D8D')
+                  .addFields(
+                    { name: 'הועלה ע"י:', value: `${data.UserName}`, inline: true },
+                    { name: 'דירוג', value: `${data.Correct}`, inline: true },
+                    
+                )
+                msg.channel.send(tiktekEmbed);
+                   }
+                   
+                  
+               }       
+                  }else
+                    msg.reply('הכנס נתונים שנית');      
+                    }).catch(() => {
+                        msg.reply('No answer after 30 seconds, operation canceled.');
+                });
+               
+            })();
+          }
 
         if (msg.content === 'קפסולות') {
             for (let img of botData.CapsulesImg) {
