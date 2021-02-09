@@ -29,8 +29,9 @@ client.on('ready', readyDiscord);
 
 firebase.database().ref('/').on('value',getData,errData);
 
-let loginInfo =  mashov.loginToMashov(442319, 2021, "325949626", "Menashe325");
-
+(async ()=>{
+    let loginInfo = await mashov.loginToMashov(442319, 2021, "325949626", "Menashe325");
+})();
 function readyDiscord() {
     console.log('bot ready');
 }
