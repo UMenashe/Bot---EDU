@@ -10,6 +10,7 @@ const cron = require('cron');
 const firebase = require('firebase');
 const fetch = require('node-fetch');
 const mashov = require('mashov-api');
+const { htmlToText } = require('html-to-text');
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASEKEY,
@@ -30,11 +31,11 @@ client.on('ready', readyDiscord);
 firebase.database().ref('/').on('value',getData,errData);
 
 let loginInfo;
-async function login(){
-    loginInfo  = await mashov.loginToMashov(442319, 2021, "325949626", "Menashe325");
-}
-login();
+ mashov.loginToMashov(442319, 2021, "325949626", "Menashe325").then(async (loginInfoS) => {
+    loginInfo = loginInfoS;
+ });
    
+
 function readyDiscord() {
     console.log('bot ready');
 }
@@ -63,9 +64,45 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
     let channelM = client.channels.cache.get('779330728608792579');
     sendGif('Good Morning',channelM);
 });
+
+let MessageFinbox = new cron.CronJob('*/5 6-23 * * 0-5', () => {
+    let channelM = client.channels.cache.get('779330728608792579');
+    getInbox(channelM);
+});
 scheduledMessage.start();
 scheduledMessage2.start();
 scheduledMessage3.start();
+MessageFinbox.start();
+
+async function getInbox(channelM){
+    let mail = await mashov.getMail(loginInfo, 1);
+    if(mail[0].conversationId === botData.conversationId) return;
+   
+    firebase.database().ref('conversationId').set({conversationId: mail[0].conversationId});
+    let mailbody = await mashov.getMailBody(loginInfo,mail[0].conversationId);
+    let title = mailbody.subject;
+    let lastUpdate = mailbody.messages[0].lastUpdate;
+    let senderName = mailbody.messages[0].senderName;
+    let content = htmlToText(mailbody.messages[0].body, {
+        wordwrap: 130
+      });
+      const  mashovEmbed = new Discord.MessageEmbed()
+      .setColor('#106030')
+      .setTitle(title)
+      .setAuthor('Mashov', 'https://web.mashov.info/students/images/logo_students.png')
+      .setDescription(content)
+      .setTimestamp(lastUpdate)
+      .setFooter(`מאת: ${senderName}`);
+      let arrfiles = [];
+    if(mailbody.hasAttachments){
+        for(let i = 0 ; i<mailbody.messages[0].files.length ; i++ ){
+            let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].files[i].ownerGroup}/files/${mailbody.messages[0].files[i].fileId}/download/${encodeURI(mailbody.messages[0].files[i].fileName)}`;
+            arrfiles.push(url);
+        }
+        mashovEmbed.attachFiles(arrfiles);
+    }
+    channelM.send(mashovEmbed);
+}
 
 async function getBook(profession){
     return botData.BookData[profession];
@@ -484,23 +521,10 @@ client.on('message', msg  =>  {
             }
         }
         
-       if(msg.content === '!getinbox' && msg.author.id == '682520312818302987'){
-        (async () =>{
-            let mail = await mashov.getMail(loginInfo, 1);
-            let mailbody = await mashov.getMailBody(loginInfo,mail[0].conversationId);
-            let title = mailbody.subject;
-            let content = (mailbody.messages.body).replace(/<[^>]+>/g, '');
-              let arrfiles = [];
-            if(mailbody.hasDrafts){
-                for(let i = 0 ; i<mailbody.messages.files.length ; i++ ){
-                    let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages.files[i].ownerGroup}/files/${mailbody.messages.files[i].fileId}/download/${mailbody.messages.files[i].fileName}`;
-                    arrfiles.push(url);
-                }
-            }
-                 const attachment = new MessageAttachment(arrfiles);
-                msg.channel.send(`**${title}** \n ${content}`,attachment);
-        })()
-       }
+        if(msg.content === '!getinbox' && msg.author.id == '682520312818302987'){
+            channelM = msg.channel;
+            getInbox(channelM)
+           }
         
         if (msg.content === '!stop msg') {
             scheduledMessage.stop();
@@ -513,7 +537,13 @@ client.on('message', msg  =>  {
             msg.reply('scheduled Message Started');
         }
 
-        
+        if(msg.content === '!stop inbox'){
+            MessageFinbox.stop();
+        }
+
+        if(msg.content === '!start inbox'){
+            MessageFinbox.start();
+        }
 
         if (!(/[\u0590-\u05FF]/).test(msg.content)) {
             data = new FormData();
