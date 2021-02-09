@@ -480,7 +480,7 @@ client.on('message', msg  =>  {
             }
         }
         
-       if(msg.content === '!getinbox' && mag.author.id == '682520312818302987'){
+       if(msg.content === '!getinbox' && msg.author.id == '682520312818302987'){
         (async () =>{
             let mail = await mashov.getMail(loginInfo, 1);
             let mailbody = await mashov.getMailBody(loginInfo,mail[0].conversationId);
