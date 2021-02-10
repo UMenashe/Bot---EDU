@@ -38,7 +38,7 @@ async function loginUser(){
         userId: process.env.USERID
       });  
 }
-await loginUser();
+ loginUser();
 
 client.on('ready', readyDiscord);
 
