@@ -26,12 +26,12 @@ const firebaseConfig = {
 
 const Mashov = new Client();
 Mashov.setAuthDetails({
-    csrfToken: process.env.CSRFTOKEN,
-    uniqueId: process.env.UNIQUEID,
-    MashovAuthToken: process.env.MASHOVAUTHTOKEN,
-    correlationId: process.env.CORRELATIONID,
-    sessionId: process.env.SESSIONID,
-    userId: process.env.USERID
+    csrfToken: '323cc711-c036-9db6-7b4d-b73b6254613f',
+    uniqueId: '90-15-92-b7-28-75-9b-36-97-17-a1-df-0e-3a',
+    MashovAuthToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTZXNzaW9uSWQiOiI3ODE2Y2E0YS05MmExLWJkMTUtZTgwZS0xZmE4NmJmODU3MzQiLCJTZW1lbCI6IjQ0MjMxOSIsIlllYXIiOiIyMDIxIiwiVXNlcklkIjoiNTMzNmZhNGUtYmE4Mi00NGEzLWE3ZmEtZWZkNTllYmI2OTM0IiwiSWROdW1iZXIiOiIzMjU5NDk2MjYiLCJVc2VyVHlwZSI6IjUiLCJSb2xlVXNlclR5cGUiOiIwIiwiU2Nob29sVXNlclR5cGUiOiI0IiwiSGFzQXV0aGVudGljYXRlZCI6IlRydWUiLCJIYXNTdHJvbmdseUF1dGhlbnRpY2F0ZWQiOiJGYWxzZSIsIkxvZ2luVGltZSI6IjE2MTI5OTk4NjYiLCJMYXN0QWN0aXZpdHkiOiIxNjEyOTk5ODY2IiwiSWRwIjoiTWFzaG92IiwiRGlzcGxheU5hbWUiOiLXkNeR16jXlNee15kg157XoNep15Qg15nXkDIiLCJuYmYiOjE2MTI5OTk4NjgsImV4cCI6MTYxMzAwMTY2OCwiaWF0IjoxNjEyOTk5ODY4fQ.V8QZumKEBWvJ616SvsYfzExJf84d_aUbFBpmxBCUevk',
+    correlationId: '36016733-b57c-4954-9ae0-66f71426653f',
+    sessionId: '36016733-b57c-4954-9ae0-66f71426653f',
+    userId: '5336fa4e-ba82-44a3-a7fa-efd59ebb6934'
   });  
 
 const client = new Discord.Client();
@@ -73,9 +73,9 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
     sendGif('Good Morning',channelM);
 });
 
-let MessageFinbox = new cron.CronJob('*/3 * * * 0-5', () => {
+let MessageFinbox = new cron.CronJob('*/3 * * * 0-5', async () => {
     let channelM = client.channels.cache.get('779330728608792579');
-    getInbox(channelM);
+   await getInbox(channelM);
 });
 scheduledMessage.start();
 scheduledMessage2.start();
