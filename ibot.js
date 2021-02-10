@@ -29,13 +29,13 @@ const client = new Discord.Client();
 client.login(process.env.BOTTOKEN);
 
  Mashov.setAuthDetails({
-          csrfToken: process.env.CSRFTOKEN,
-          uniqueId: process.env.UNIQUEID,
-          MashovAuthToken: process.env.MASHOVAUTHTOKEN,
-          correlationId: process.env.CORRELATIONID,
-          sessionId: process.env.SESSIONID,
-          userId: process.env.USERID
-        });  
+  csrfToken: '8cdeb80b-c29c-9883-a436-c8ffea970464',
+  uniqueId: 'c3-07-f2-15-76-46-eb-10-de-d5-b9-65-13-82',
+  MashovAuthToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTZXNzaW9uSWQiOiIwZjc5NTFiMS1jZGM1LTc2ZDEtMDRjOS0zMDcwMjhjNWQ5OTMiLCJTZW1lbCI6IjQ0MjMxOSIsIlllYXIiOiIyMDIxIiwiVXNlcklkIjoiNTMzNmZhNGUtYmE4Mi00NGEzLWE3ZmEtZWZkNTllYmI2OTM0IiwiSWROdW1iZXIiOiIzMjU5NDk2MjYiLCJVc2VyVHlwZSI6IjUiLCJSb2xlVXNlclR5cGUiOiIwIiwiU2Nob29sVXNlclR5cGUiOiI0IiwiSGFzQXV0aGVudGljYXRlZCI6IlRydWUiLCJIYXNTdHJvbmdseUF1dGhlbnRpY2F0ZWQiOiJGYWxzZSIsIkxvZ2luVGltZSI6IjE2MTI5NjAzODMiLCJMYXN0QWN0aXZpdHkiOiIxNjEyOTYwMzgzIiwiSWRwIjoiTWFzaG92IiwiRGlzcGxheU5hbWUiOiLXkNeR16jXlNee15kg157XoNep15Qg15nXkDIiLCJuYmYiOjE2MTI5NjAzODUsImV4cCI6MTYxMjk2MjE4NSwiaWF0IjoxNjEyOTYwMzg1fQ.OUQfZV8TvusBZgtS5x_xSk2ShSulkX3B05Wq2XMwErI',
+  correlationId: 'a6eee25f-2bc8-4258-89fd-2a64024b7c67',
+  sessionId: 'a6eee25f-2bc8-4258-89fd-2a64024b7c67',
+  userId: '5336fa4e-ba82-44a3-a7fa-efd59ebb6934'
+});  
 
 client.on('ready', readyDiscord);
 
