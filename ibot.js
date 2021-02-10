@@ -85,7 +85,6 @@ scheduledMessage3.start();
 MessageFinbox.start();
 
 async function getInbox(channelM){
-    await loginUser();
     let mail = await Mashov.getConversations('inbox',1,0);
     if(mail[0].id === botData.conversationId) return;
    
