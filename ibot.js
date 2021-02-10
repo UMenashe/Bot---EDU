@@ -9,7 +9,7 @@ const FormData = require('form-data');
 const cron = require('cron');
 const firebase = require('firebase');
 const fetch = require('node-fetch');
-const mashov = require('mashov-api');
+let  { Client } = require('node-mashov');
 const { htmlToText } = require('html-to-text');
 
 const firebaseConfig = {
@@ -24,8 +24,23 @@ const firebaseConfig = {
   };
   firebase.initializeApp(firebaseConfig);
 
+const Mashov = new Client();
 const client = new Discord.Client();
 client.login(process.env.BOTTOKEN);
+
+(async ()=>{
+    await  Mashov.setAuthDetails({
+          csrfToken: process.env.CSRFTOKEN,
+          uniqueId: process.env.UNIQUEID,
+          MashovAuthToken: process.env.MASHOVAUTHTOKEN,
+          correlationId: process.env.CORRELATIONID,
+          sessionId: process.env.SESSIONID,
+          userId: process.env.USERID
+        });  
+        let channelM = client.channels.cache.get('779330728608792579');
+      await getInbox(channelM);
+  })();
+
 client.on('ready', readyDiscord);
 
 firebase.database().ref('/').on('value',getData,errData);
@@ -75,13 +90,13 @@ scheduledMessage3.start();
 MessageFinbox.start();
 
 async function getInbox(channelM){
-    let mail = await mashov.getMail(loginInfo, 1);
-    if(mail[0].conversationId === botData.conversationId) return;
+    let mail = await Mashov.getConversations('inbox',1,0);
+    if(mail[0].id === botData.conversationId) return;
    
-    firebase.database().ref('conversationId').set({conversationId: mail[0].conversationId});
-    let mailbody = await mashov.getMailBody(loginInfo,mail[0].conversationId);
+    firebase.database().ref('conversationId').set({conversationId: mail[0].id});
+    let mailbody = await Mashov.getConversation(mail[0].id);
     let title = mailbody.subject;
-    let lastUpdate = mailbody.messages[0].lastUpdate;
+    let lastUpdate = mailbody.messages[0].timestamp;
     let senderName = mailbody.messages[0].senderName;
     let content = htmlToText(mailbody.messages[0].body, {
         wordwrap: 130
@@ -544,6 +559,7 @@ client.on('message', msg  =>  {
         if(msg.content === '!start inbox'){
             MessageFinbox.start();
         }
+
 
         if (!(/[\u0590-\u05FF]/).test(msg.content)) {
             data = new FormData();
