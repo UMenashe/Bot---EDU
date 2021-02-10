@@ -25,20 +25,18 @@ const firebaseConfig = {
   firebase.initializeApp(firebaseConfig);
 
 const Mashov = new Client();
+Mashov.setAuthDetails({
+    csrfToken: process.env.CSRFTOKEN,
+    uniqueId: process.env.UNIQUEID,
+    MashovAuthToken: process.env.MASHOVAUTHTOKEN,
+    correlationId: process.env.CORRELATIONID,
+    sessionId: process.env.SESSIONID,
+    userId: process.env.USERID
+  });  
+
 const client = new Discord.Client();
 client.login(process.env.BOTTOKEN);
 
-async function loginUser(){
-    Mashov.setAuthDetails({
-        csrfToken: process.env.CSRFTOKEN,
-        uniqueId: process.env.UNIQUEID,
-        MashovAuthToken: process.env.MASHOVAUTHTOKEN,
-        correlationId: process.env.CORRELATIONID,
-        sessionId: process.env.SESSIONID,
-        userId: process.env.USERID
-      });  
-}
- loginUser();
 
 client.on('ready', readyDiscord);
 
@@ -75,7 +73,7 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
     sendGif('Good Morning',channelM);
 });
 
-let MessageFinbox = new cron.CronJob('*/5 6-23 * * 0-5', () => {
+let MessageFinbox = new cron.CronJob('*/3 * * * 0-5', () => {
     let channelM = client.channels.cache.get('779330728608792579');
     getInbox(channelM);
 });
@@ -85,7 +83,6 @@ scheduledMessage3.start();
 MessageFinbox.start();
 
 async function getInbox(channelM){
-    await loginUser();
     let mail = await Mashov.getConversations('inbox',1,0);
     if(mail[0].id === botData.conversationId) return;
    
