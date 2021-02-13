@@ -25,14 +25,16 @@ const firebaseConfig = {
   firebase.initializeApp(firebaseConfig);
 
 const Mashov = new Client();
-Mashov.setAuthDetails({
-  csrfToken: 'a43b0499-bbc0-7197-cd85-84154694c672',
-  uniqueId: '71-52-40-92-c4-3b-bf-94-a0-42-87-7b-ae-9c',
-  MashovAuthToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTZXNzaW9uSWQiOiIzZjk5ZmUzOC01YzU2LWYwODctYzYxMS1mY2NhNWRmMWM1MGMiLCJTZW1lbCI6IjQ0MjMxOSIsIlllYXIiOiIyMDIxIiwiVXNlcklkIjoiNTMzNmZhNGUtYmE4Mi00NGEzLWE3ZmEtZWZkNTllYmI2OTM0IiwiSWROdW1iZXIiOiIzMjU5NDk2MjYiLCJVc2VyVHlwZSI6IjUiLCJSb2xlVXNlclR5cGUiOiIwIiwiU2Nob29sVXNlclR5cGUiOiI0IiwiSGFzQXV0aGVudGljYXRlZCI6IlRydWUiLCJIYXNTdHJvbmdseUF1dGhlbnRpY2F0ZWQiOiJGYWxzZSIsIkxvZ2luVGltZSI6IjE2MTMwMjc0ODIiLCJMYXN0QWN0aXZpdHkiOiIxNjEzMDI3NDgyIiwiSWRwIjoiTWFzaG92IiwiRGlzcGxheU5hbWUiOiLXkNeR16jXlNee15kg157XoNep15Qg15nXkDIiLCJuYmYiOjE2MTMwMjc0ODUsImV4cCI6MTYxMzAyOTI4NSwiaWF0IjoxNjEzMDI3NDg1fQ.Q5521qmKFHYSLoJ9dNX58sUFIJ6N-57tTI6qe-GPGgI',
-  correlationId: '62c9115b-a4fa-4651-98c1-5dfdd109246d',
-  sessionId: '62c9115b-a4fa-4651-98c1-5dfdd109246d',
-  userId: '5336fa4e-ba82-44a3-a7fa-efd59ebb6934'
-});  
+const school = {id: 442319,name: 'ישיבת צביה קטיף - יד בנימין',years: [2012, 2013, 2014, 2015, 2016, 2017,2018, 2019, 2020,2021]};
+
+(async ()=>{
+    await Mashov.login({
+        username: process.env.MASHOVUSER,
+        password: process.env.MASHOVPASS,
+        year: school.years[school.years.length - 1],
+        school
+      }) 
+})();  
 
 const client = new Discord.Client();
 client.login(process.env.BOTTOKEN);
@@ -73,7 +75,8 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
     sendGif('Good Morning',channelM);
 });
 
-let MessageFinbox = new cron.CronJob('*/3 * * * 0-5', async () => {
+let MessageFinbox = new cron.CronJob('*/1 * * * 0-6', async () => {
+    await Mashov.setAuthDetails(await Mashov.getAuthDetails());
     let channelM = client.channels.cache.get('779330728608792579');
    await getInbox(channelM);
 });
@@ -103,8 +106,8 @@ async function getInbox(channelM){
       .setFooter(`מאת: ${senderName}`);
       let arrfiles = [];
     if(mailbody.hasAttachments){
-        for(let i = 0 ; i<mailbody.messages[0].files.length ; i++ ){
-            let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].files[i].ownerGroup}/files/${mailbody.messages[0].files[i].fileId}/download/${encodeURI(mailbody.messages[0].files[i].fileName)}`;
+        for(let i = 0 ; i<mailbody.messages[0].attachments.length ; i++ ){
+            let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].attachments[i].ownerGroup}/files/${mailbody.messages[0].attachments[i].id}/download/${encodeURI(mailbody.messages[0].attachments[i].name)}`;
             arrfiles.push(url);
         }
         mashovEmbed.attachFiles(arrfiles);
