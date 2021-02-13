@@ -89,11 +89,11 @@ async function getInbox(channelM){
     let mail = await Mashov.getConversations('inbox',1,0);
     if(mail[0].id === botData.conversationId) return;
    
-    firebase.database().ref('conversationId').set({conversationId: mail[0].id});
+    firebase.database().ref('conversationId').set(mail[0].id);
     let mailbody = await Mashov.getConversation(mail[0].id);
     let title = mailbody.subject;
     let lastUpdate = mailbody.messages[0].timestamp;
-    let senderName = mailbody.messages[0].senderName;
+    let senderName = mailbody.messages[0].sender;
     let content = htmlToText(mailbody.messages[0].body, {
         wordwrap: 130
       });
@@ -107,10 +107,10 @@ async function getInbox(channelM){
       let arrfiles = [];
     if(mailbody.hasAttachments){
         for(let i = 0 ; i<mailbody.messages[0].attachments.length ; i++ ){
-            let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].attachments[i].ownerGroup}/files/${mailbody.messages[0].attachments[i].id}/download/${encodeURI(mailbody.messages[0].attachments[i].name)}`;
+            let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].id}/files/${mailbody.messages[0].attachments[i].id}/download/${encodeURI(mailbody.messages[0].attachments[i].name)}`;
             arrfiles.push(url);
         }
-        mashovEmbed.attachFiles(arrfiles);
+        mashovEmbed.attachFiles(arrfiles,mailbody.messages[0].attachments[0].name);
     }
     channelM.send(mashovEmbed);
 }
