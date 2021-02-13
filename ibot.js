@@ -85,6 +85,13 @@ scheduledMessage2.start();
 scheduledMessage3.start();
 MessageFinbox.start();
 
+async function getBuffer(url){
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    return buffer;
+}
+
 async function getInbox(channelM){
     let mail = await Mashov.getConversations('inbox',1,0);
     if(mail[0].id === botData.conversationId) return;
@@ -108,7 +115,7 @@ async function getInbox(channelM){
     if(mailbody.hasAttachments){
         for(let i = 0 ; i<mailbody.messages[0].attachments.length ; i++ ){
             let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].id}/files/${mailbody.messages[0].attachments[i].id}/download/${encodeURI(mailbody.messages[0].attachments[i].name)}`;
-            arrfiles.push(url);
+            arrfiles.push(await getBuffer(url));
         }
         mashovEmbed.attachFiles(arrfiles,mailbody.messages[0].attachments[0].name);
     }
