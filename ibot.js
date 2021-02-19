@@ -24,20 +24,19 @@ const firebaseConfig = {
   };
   firebase.initializeApp(firebaseConfig);
 
+  const client = new Discord.Client();
+client.login(process.env.BOTTOKEN);
 const Mashov = new Client();
 const school = {id: 442319,name: 'ישיבת צביה קטיף - יד בנימין',years: [2012, 2013, 2014, 2015, 2016, 2017,2018, 2019, 2020,2021]};
 
-(async ()=>{
+async function loginMashov(){
     await Mashov.login({
         username: process.env.MASHOVUSER,
         password: process.env.MASHOVPASS,
         year: school.years[school.years.length - 1],
         school
       }) 
-})();  
-
-const client = new Discord.Client();
-client.login(process.env.BOTTOKEN);
+}; 
 
 
 client.on('ready', readyDiscord);
@@ -59,8 +58,6 @@ botData = data.val();
  console.log(err);
  }
 
- 
-
 let scheduledMessage = new cron.CronJob('29 9-16 * * 1', () => {
     let channelM = client.channels.cache.get('779330728608792579');
     findLesson(channelM, true);
@@ -75,15 +72,16 @@ let scheduledMessage3 = new cron.CronJob('30 6 * * 0-5', () => {
     sendGif('Good Morning',channelM);
 });
 
-let MessageFinbox = new cron.CronJob('*/1 * * * 0-6', async () => {
-    await Mashov.setAuthDetails(await Mashov.getAuthDetails());
-    let channelM = client.channels.cache.get('779330728608792579');
-   await getInbox(channelM);
-});
+const Help = new Discord.MessageEmbed()
+    .setColor('#2c6bd7')
+    .setTitle('שלח את הפקודה:')
+    .setDescription('``תיקתק <6 ספרות של מספר הפריט>`` 👇')
+    .setImage('https://i.imgur.com/vBjy5YH.jpg')
+    .setAuthor('Help', 'https://icons.iconarchive.com/icons/visualpharm/must-have/256/Help-icon.png');
+
 scheduledMessage.start();
 scheduledMessage2.start();
 scheduledMessage3.start();
-MessageFinbox.start();
 
 async function getBuffer(url){
     const response = await fetch(url);
@@ -115,28 +113,14 @@ async function getInbox(channelM){
     if(mailbody.hasAttachments){
         for(let i = 0 ; i<mailbody.messages[0].attachments.length ; i++ ){
             let url = `https://web.mashov.info/api/mail/messages/${mailbody.messages[0].id}/files/${mailbody.messages[0].attachments[i].id}/download/${encodeURI(mailbody.messages[0].attachments[i].name)}`;
-            arrfiles.push(await getBuffer(url));
+            arrfiles.push(url);
         }
         mashovEmbed.attachFiles(arrfiles,mailbody.messages[0].attachments[0].name);
     }
     channelM.send(mashovEmbed);
 }
 
-async function getBook(profession){
-    return botData.BookData[profession];
-}
-
- function getBookObj(book_name,list_books){
-    let arr = [];
-    for(let book of list_books){
-        if(book.Title.search(book_name) === 0){
-            arr.push(book);
-        }
-    }
-    return arr[0];
-}
-
-async function GetSolutions(bookObj,page,question) {
+async function GetSolutions(bookObj,page,question,sq = null) {
     let promis = await fetch('https://tiktek.com/il/services/SolutionSearch.asmx/GetSolutionsEx',{
         method: 'POST',
         headers: {
@@ -144,7 +128,7 @@ async function GetSolutions(bookObj,page,question) {
             'Accept-Language':'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
             'Accept':'application/json, text/javascript, */*; q=0.01',
         },
-        body: JSON.stringify({bookID: bookObj.ID, page: page, question: question, sq: null, ssq: null, userID: null})
+        body: JSON.stringify({bookID: bookObj.ID, page: page, question: question, sq: sq, ssq: null, userID: null})
     })
     let json = await promis.json();
     return json;
@@ -374,60 +358,82 @@ client.on('message', msg  =>  {
             msg.channel.send(EmbedImg);
         }
 
-          if(msg.content.startsWith('תיקתק')){
-              let key = msg.content.replace("תיקתק ", "");
-              key = key.split('-');
+        if(msg.content.startsWith('תיקתק')){
+            let key = msg.content.split(' ');
+            if(key.length > 1){
+                if(parseInt(key[1]) === 0){
+                  msg.reply('מספר פריט שאינו תקין');
+                }else{
               (async() => {
-                let list_books;
-                list_books = await getBook(key[0]);
-                let bookObj = getBookObj(key[1],list_books);
-
-                const tiktekEmbed = new Discord.MessageEmbed()
-                  .setTitle("הכנס: מספר עמוד,שאלה")
-                  .setAuthor('Tiktek', `https://is5-ssl.mzstatic.com/image/thumb/Purple113/v4/7f/e6/8e/7fe68e14-8042-db6b-bd8b-1a61dee410d7/source/512x512bb.png`)
-                  .setThumbnail(`${bookObj.Image}`)
-                  .setColor('#355D8D')
-                  .addFields(
-                    { name: 'עמודים', value: `${bookObj.PMin}-${bookObj.PMax}`, inline: true },
-                    { name: 'מוציא לאור', value: `${bookObj.Pub}`, inline: true },
-                )
-                msg.channel.send(tiktekEmbed);
-
-                msg.channel.awaitMessages(async m =>  m.author.id == msg.author.id,
-                    {max: 1, time: 30000}).then(async collected  => {
-                        let page = collected.first().content.split(',')[0];
-                        let section = collected.first().content.split(',')[1];
-                            if (page != null) {
-                  let solutions =  await GetSolutions(bookObj,page,section);
-               if(solutions.d.ResultData.length === 0){
-                msg.channel.send("לא נמצאו פתרונות");
-               }else {
-                let urlimg = [];
-                let urlS;
-                   for(let data of solutions.d.ResultData){
-                    const tiktekEmbed = new Discord.MessageEmbed()
-                  .setTitle(`פתרון לעמוד ${data.Page} שאלה ${data.Question}`)
-                  .setAuthor('Tiktek', `https://is5-ssl.mzstatic.com/image/thumb/Purple113/v4/7f/e6/8e/7fe68e14-8042-db6b-bd8b-1a61dee410d7/source/512x512bb.png`)
-                  .setImage(`https://tiktek.com/il/tt-resources/solution-images/${data.Prefix}_${data.BookID}/${data.Image}`)
-                  .setColor('#355D8D')
-                  .addFields(
-                    { name: 'הועלה ע"י:', value: `${data.UserName}`, inline: true },
-                    { name: 'דירוג', value: `${data.Correct}`, inline: true },
+                  let bookObj = botData.BookData.find(book => book.itemNumber === key[1])
+                  if(bookObj === undefined){
+                      const msgError = new Discord.MessageEmbed()
+                    .setTitle('הספר אינו נמצא במאגר')
+                    .setDescription('נשלחה בקשה לעדכון הספר,תודה! 👍')
+                    .setColor('#F9360C')
+                      firebase.database().ref('MissingBooks').push({id: msg.content.replace("תיקתק ",'')})
+                      msg.reply('',msgError);
+                   }else{
+                  const tiktekEmbed = new Discord.MessageEmbed()
+                    .setTitle("הכנס: `עמוד x שאלה x (סעיף x)`")
+                    .setAuthor('Tiktek', `https://lh3.googleusercontent.com/GoZivKsWYOiUEqizHWOIiqmcu9iNOfym9DF6sLhXPkwuC4R6nRsaak8YbrKix059TA=s141-rw`)
+                    .setThumbnail(`${bookObj.Image}`)
+                    .setColor('#355D8D')
+                    .addFields(
+                      { name: 'עמודים', value: `${bookObj.PMin}-${bookObj.PMax}`, inline: true },
+                      { name: 'מוציא לאור', value: `${bookObj.Pub}`, inline: true },
+                  )
+                  msg.channel.send(tiktekEmbed);
+  
+                  msg.channel.awaitMessages(async m =>  m.author.id == msg.author.id,
+                      {max: 1, time: 60000}).then(async collected  => {
+                          let page = collected.first().content.split(' ')[1];
+                          let section = collected.first().content.split(' ')[3];
+                          let sq = collected.first().content.split(' ')[5];
+                              if (page != null) {
+                    let solutions =  await GetSolutions(bookObj,page,section,sq);
+                    let length = solutions.d.ResultData.length;
+                 if(length === 0){
+                  msg.channel.send("לא נמצאו פתרונות");
+                 }else {
+                     if(length > 9){
+                      length = 9;
+                     }
+                     for(let data of solutions.d.ResultData){
+                      const tiktekEmbed = new Discord.MessageEmbed()
+                    .setTitle(`פתרון לעמוד ${data.Page} שאלה ${data.Question}`)
+                    .setAuthor('Tiktek', `https://lh3.googleusercontent.com/GoZivKsWYOiUEqizHWOIiqmcu9iNOfym9DF6sLhXPkwuC4R6nRsaak8YbrKix059TA=s141-rw`)
+                    .setImage(`https://tiktek.com/il/tt-resources/solution-images/${data.Prefix}_${data.BookID}/${data.Image}`)
+                    .setColor('#355D8D')
+                    .addFields(
+                      { name: 'הועלה ע"י:', value: `${data.UserName}`, inline: true },
+                      { name: 'דירוג', value: `${data.Correct}`, inline: true },
+                      
+                  )
+                  .setFooter('© Tiktek Learning 2021')
+                  msg.channel.send(tiktekEmbed);
+                  length--;
+                  if(length === 0){
+                      break;
+                  }
+                     }
+                     
+                 }       
+                    }else{
+                      msg.reply('הכנס נתונים שנית'); 
+                    }
                     
-                )
-                msg.channel.send(tiktekEmbed);
-                   }
-                   
-                  
-               }       
-                  }else
-                    msg.reply('הכנס נתונים שנית');      
-                    }).catch(() => {
-                        msg.reply('No answer after 30 seconds, operation canceled.');
-                });
-               
-            })();
+                      }).catch(() => {
+                          msg.reply('הפעולה התבטלה אחרי 60 שניות');
+                  });
+              }
+              })();
           }
+            }else{
+              msg.reply(Help);
+            }
+            
+        }
 
         if (msg.content === 'קפסולות') {
             for (let img of botData.CapsulesImg) {
@@ -464,6 +470,9 @@ client.on('message', msg  =>  {
 
         }
 
+        if(msg.content.startsWith('עזרה תיקתק')){
+            msg.channel.send(Help);
+        }
 
         if (msg.content.startsWith('אימייל')) {
             let e = msg.content;
@@ -520,6 +529,17 @@ client.on('message', msg  =>  {
                 }
             }
         }
+
+
+        if(msg.content === 'צור הודעה'){
+            const message = new Discord.MessageEmbed()
+            .setTitle('חוקי שרת ישיבת צביה קטיף')
+            .setDescription("\nאין להעליב/לקלל/להשפיל או לפגוע באף אחד ■\n\nאסור לריב/להציק ■\n\nאין להספים ■\n\nנא לא לתייג בלי סיבה ■\n\nאין לפרסם שרתי דיסקורד ■\n\nנא לא להזמין לשרת אנשים שלא מהכיתה ■\n")
+            .setAuthor('Rules', `https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Note_icon.svg/1200px-Note_icon.svg.png`)
+            .setColor('#F9360C')
+            msg.channel.send(message);
+        }
+
         if (msg.content === 'כל המבחנים הקרובים' || msg.content === 'כל המבחנים הבאים'|| msg.content === 'המבחנים הבאים') {
            
             if (botData.tests.length <= 0) {
@@ -540,8 +560,12 @@ client.on('message', msg  =>  {
         }
         
         if(msg.content === '!getinbox' && msg.author.id == '682520312818302987'){
-            channelM = msg.channel;
-            getInbox(channelM)
+            (async ()=>{
+                await loginMashov();
+                await Mashov.setAuthDetails(await Mashov.getAuthDetails());
+               let channelM = client.channels.cache.get('779330728608792579');
+                await getInbox(channelM);
+            })()
            }
         
         if (msg.content === '!stop msg') {
@@ -553,14 +577,6 @@ client.on('message', msg  =>  {
             scheduledMessage.start();
             scheduledMessage2.start();
             msg.reply('scheduled Message Started');
-        }
-
-        if(msg.content === '!stop inbox'){
-            MessageFinbox.stop();
-        }
-
-        if(msg.content === '!start inbox'){
-            MessageFinbox.start();
         }
 
 
