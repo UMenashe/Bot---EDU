@@ -79,7 +79,6 @@ const Help = new Discord.MessageEmbed()
     .setAuthor('Help', 'https://icons.iconarchive.com/icons/visualpharm/must-have/256/Help-icon.png');
 
 scheduledMessage3.start();
-scheduledMessage3.start();
 
 function queueDafYomi(queue,msg){
     let arrFields = [];
