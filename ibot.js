@@ -7,24 +7,19 @@ const Discord = require('discord.js');
 const axios = require('axios');
 const FormData = require('form-data');
 const cron = require('cron');
-const firebase = require('firebase');
+const firebase = require('firebase-admin');
 const fetch = require('node-fetch');
 let  { Client } = require('node-mashov');
 const { htmlToText } = require('html-to-text');
+const Gematria = require('gematria');
+const pdf2img = require('pdf-img-convert');
 
-const firebaseConfig = {
-    apiKey: process.env.FIREBASEKEY,
-    authDomain: process.env.AUTHDOMAIN,
-    databaseURL: process.env.DATABASEURL,
-    projectId: process.env.PROJECTID,
-    storageBucket: process.env.STORAGEBUCKET,
-    messagingSenderId: process.env.SENDERID,
-    appId: process.env.APPID,
-    measurementId: process.env.MEASUREMENTID
-  };
-  firebase.initializeApp(firebaseConfig);
+firebase.initializeApp({
+    credential: firebase.credential.cert(process.env.FIREBASECONFIG),
+    databaseURL: process.env.DATABASEURL
+  });
 
-  const client = new Discord.Client();
+const client = new Discord.Client();
 client.login(process.env.BOTTOKEN);
 const Mashov = new Client();
 const school = {id: 442319,name: 'ישיבת צביה קטיף - יד בנימין',years: [2012, 2013, 2014, 2015, 2016, 2017,2018, 2019, 2020,2021]};
@@ -40,10 +35,8 @@ async function loginMashov(){
 
 
 client.on('ready', readyDiscord);
-
 firebase.database().ref('/').on('value',getData,errData);
-
-   
+let servers = {};
 
 function readyDiscord() {
     console.log('bot ready');
@@ -79,9 +72,41 @@ const Help = new Discord.MessageEmbed()
     .setImage('https://i.imgur.com/vBjy5YH.jpg')
     .setAuthor('Help', 'https://icons.iconarchive.com/icons/visualpharm/must-have/256/Help-icon.png');
 
-scheduledMessage.start();
-scheduledMessage2.start();
+    const HelpDafYomi = new Discord.MessageEmbed()
+    .setColor('#2c6bd7')
+    .setTitle('שלח את הפקודה:')
+    .setDescription('``הדף היומי מסכת X דף X``')
+    .setAuthor('Help', 'https://icons.iconarchive.com/icons/visualpharm/must-have/256/Help-icon.png');
+
 scheduledMessage3.start();
+scheduledMessage3.start();
+
+function queueDafYomi(queue,msg){
+    let arrFields = [];
+    let index = 0;
+    if(!queue[0]){
+        return;
+    }
+   for(let media of queue){
+    arrFields.push(` **${index}** . מגיד: ${media.ma} |  ${media.lnk.match(/\(([^)]+)\)/)[1]}`);
+    index++;
+   }
+   const dafYomiEmbed = new Discord.MessageEmbed()
+      .setTitle(`מסכת ${queue[0].m} דף ${queue[0].d}`)
+      .setColor('#e5cd77');
+
+    if(arrFields.length === 1){
+        dafYomiEmbed.addFields(
+            { name: 'משמיע: 🔊', value: `מגיד: ${queue[0].ma} |  ${queue[0].lnk.match(/\(([^)]+)\)/)[1]}`, inline: false }
+        );
+    }else{
+        dafYomiEmbed.addFields(
+            { name: 'משמיע: 🔊', value: `מגיד: ${queue[0].ma} |  ${queue[0].lnk.match(/\(([^)]+)\)/)[1]}`, inline: false },
+            { name: 'הבא בתור: ⏭', value: arrFields.slice(1,arrFields.length).join('\n\n'), inline: false },
+        );
+    }
+      msg.channel.send(dafYomiEmbed);
+  }
 
 async function getBuffer(url){
     const response = await fetch(url);
@@ -89,6 +114,7 @@ async function getBuffer(url){
     const buffer = Buffer.from(arrayBuffer);
     return buffer;
 }
+
 
 async function getInbox(channelM){
     let mail = await Mashov.getConversations('inbox',1,0);
@@ -134,6 +160,37 @@ async function GetSolutions(bookObj,page,question,sq = null) {
     return json;
 }
 
+async function dafYomi(daf,massechet){
+    let url = `http://www.daf-yomi.com/AjaxHandler.ashx?medialist=1&pagesize=5&page=1&massechet=${massechet}&medaf=${daf}&addaf=${daf}&safa=1&maggid=&chofshi=&sort=massechet&dir=1&ro=1614616432944`;
+    let promis = await fetch(url,{
+        method: 'GET',
+        headers: {
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language':'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept':'application/json, text/javascript, */*; q=0.01',
+        }
+    })
+    let json = await promis.json();
+    return json;
+}
+
+ function playServer(connection,server){
+              server.dispatcher = connection.play(server.queue[0].k);
+                server.queue.shift();
+                server.dispatcher.on('start', () => {
+                    console.log('audio.mp3 is now playing!');
+                });
+                
+                server.dispatcher.on('finish', () => {
+                    if(server.queue[0]){
+                      playServer(connection,server);
+                    }else{
+                        connection.disconnect();
+                    }
+                    
+                });
+                server.dispatcher.on('error', console.error);
+}
 
 function buildTest(date, type, material, heDate, msg) {
     const EmbedTest = new Discord.MessageEmbed()
@@ -298,7 +355,7 @@ client.on('messageReactionAdd', (reaction, user) => {
         }
     }
 });
-client.on('message', msg  =>  {
+client.on('message', async msg  =>  {
     try {
         if (msg.author.bot) return;
         if (msg.content == 'השיעור הבא' || msg.content == 'שיעור הבא' || msg.content == 'מה השיעור הבא') {
@@ -435,6 +492,82 @@ client.on('message', msg  =>  {
             
         }
 
+        if(msg.content.startsWith('דף יומי') || msg.content.startsWith('הדף היומי')){
+            let details = msg.content.split(' ');
+            if(details.length <3 || details.length < 6){
+              msg.reply(HelpDafYomi);
+              return;
+            }
+
+            if (!msg.member.voice.channel) {
+                msg.reply('You must be in a voice channel 🔉');
+                return;
+            }
+
+            if(!servers[msg.guild.id]){
+                servers[msg.guild.id] = {queue: []};
+            }
+              let server = servers[msg.guild.id];
+              let massechet = botData.Massahot.find(Massahot => Massahot.Name === details[3]);
+              let daf = Gematria(details[5]).toMisparGadol();
+              let list =  await dafYomi(daf,massechet.Id);
+              for(let media of list){
+                  if(media.dur){
+                    server.queue.push(media);
+                  }
+              }
+            
+            if(!msg.guild.VoiceConnection){
+                queueDafYomi(server.queue,msg);
+                const connection = await msg.member.voice.channel.join();
+                 playServer(connection,server);
+            }
+              
+          }
+
+
+          if(msg.content === 'דלג'){
+             let server = servers[msg.guild.id];
+             if(server)
+              if(server.dispatcher){
+                server.dispatcher.end();
+                queueDafYomi(server.queue,msg);
+              }
+          }
+
+          if(msg.content === 'סיים'){
+            let server = servers[msg.guild.id];
+            if(server)
+            if(server.dispatcher){
+                for(let i = server.queue.length -1 ; i>=0 ; i--){
+                    server.queue.splice(i,1);
+                }
+                server.dispatcher.end();
+                if(msg.member.voice.connection){
+                    msg.member.voice.connection.disconnect();
+                    msg.channel.send('👍'); 
+                }   
+            }     
+          }
+
+          if(msg.content === 'עצור'){
+            let server = servers[msg.guild.id];
+            if(server)
+            if(server.dispatcher){
+            server.dispatcher.pause(true);
+            msg.channel.send('stopped ▶️');
+            }
+          }
+
+          if(msg.content === 'המשך'){
+            let server = servers[msg.guild.id];
+            if(server)
+            if(server.dispatcher){
+            server.dispatcher.resume();
+            msg.channel.send('continue ⏸');
+            }
+          }
+
         if (msg.content === 'קפסולות') {
             for (let img of botData.CapsulesImg) {
                 const EmbedCapsules = new Discord.MessageEmbed()
@@ -530,7 +663,14 @@ client.on('message', msg  =>  {
             }
         }
 
-
+        if(msg.content === '!pdf' && msg.author.id == '682520312818302987'){
+            let outputImages1 = await pdf2img.convert('http://www.daf-yomi.com/Data/UploadedFiles/DY_Page/845.pdf',{width: 1300 ,height: 1300 ,page_numbers: [1],base64: false});
+            const buffer = Buffer.from(outputImages1[0]);
+            const  pdf = new Discord.MessageEmbed()
+         .attachFiles(buffer)
+          msg.channel.send(pdf);
+        }
+        
         if(msg.content === 'צור הודעה'){
             const message = new Discord.MessageEmbed()
             .setTitle('חוקי שרת ישיבת צביה קטיף')
