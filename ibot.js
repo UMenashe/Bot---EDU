@@ -14,8 +14,21 @@ const { htmlToText } = require('html-to-text');
 const Gematria = require('gematria');
 const pdf2img = require('pdf-img-convert');
 
+const firebaseConfig = {
+    "type": "service_account",
+    "project_id": process.env.PROJECTID,
+    "private_key_id": process.env.PRIVATEKEYID,
+    "private_key": process.env.PRIVATEKEY,
+    "client_email": process.env.CLIENTEMAIL,
+    "client_id": process.env.CLIENTID,
+    "auth_uri": process.env.AUTHURI,
+    "token_uri": process.env.TOKENURI,
+    "auth_provider_x509_cert_url": process.env.AUTHPROVIDER,
+    "client_x509_cert_url": process.env.CLIENTCERT
+  };
+
 firebase.initializeApp({
-    credential: firebase.credential.cert(process.env.FIREBASECONFIG),
+    credential: firebase.credential.cert(firebaseConfig),
     databaseURL: process.env.DATABASEURL
   });
 
