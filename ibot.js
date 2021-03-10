@@ -189,9 +189,6 @@ async function dafYomi(daf,massechet){
  function playServer(connection,server){
               server.dispatcher = connection.play(server.queue[0].k);
                 server.queue.shift();
-                server.dispatcher.on('start', () => {
-                    console.log('audio.mp3 is now playing!');
-                });
                 
                 server.dispatcher.on('finish', () => {
                     if(server.queue[0]){
@@ -504,38 +501,50 @@ client.on('message', async msg  =>  {
             
         }
 
-        if(msg.content.startsWith('דף יומי') || msg.content.startsWith('הדף היומי')){
-            let details = msg.content.split(' ');
-            if(details.length <3 || details.length < 6){
-              msg.reply(HelpDafYomi);
-              return;
-            }
+        if(msg.content.startsWith('הדף היומי') || msg.content.startsWith('דף יומי')){
+            let details = msg.content.split(' מסכת ');
 
-            if (!msg.member.voice.channel) {
-                msg.reply('You must be in a voice channel 🔉');
-                return;
-            }
+            if(details.length !== 2){
+               msg.reply(HelpDafYomi);
+               return;
+             }
+            details = details[1].split(' דף ');
 
-            if(!servers[msg.guild.id]){
-                servers[msg.guild.id] = {queue: []};
-            }
-              let server = servers[msg.guild.id];
-              let massechet = botData.Massahot.find(Massahot => Massahot.Name === details[3]);
-              let daf = Gematria(details[5]).toMisparGadol();
-              let list =  await dafYomi(daf,massechet.Id);
-              for(let media of list){
-                  if(media.dur){
-                    server.queue.push(media);
-                  }
-              }
-            
-            if(!msg.guild.VoiceConnection){
-                queueDafYomi(server.queue,msg);
-                const connection = await msg.member.voice.channel.join();
-                 playServer(connection,server);
-            }
-              
-          }
+           if(details.length !== 2){
+             msg.reply(HelpDafYomi);
+             return;
+           }
+
+           if (!msg.member.voice.channel) {
+               msg.reply('You must be in a voice channel 🔉');
+               return;
+           }
+
+           if(!servers[msg.guild.id]){
+               servers[msg.guild.id] = {queue: []};
+           }
+             let server = servers[msg.guild.id];
+             let massechet = botData.Massahot.find(Massahot => Massahot.Name === details[0]);
+             let daf = Gematria(details[1]).toMisparGadol();
+             let list =  await dafYomi(daf,massechet.Id);
+             if(list.length === 0){
+               msg.reply('לא נמצאו שיעורים 👀');
+               return;
+             }
+             
+             for(let media of list){
+                 if(media.dur){
+                   server.queue.push(media);
+                 }
+             }
+           
+           if(!msg.guild.VoiceConnection){
+               queueDafYomi(server.queue,msg);
+               const connection = await msg.member.voice.channel.join();
+                playServer(connection,server);
+           }
+             
+         }
 
 
           if(msg.content === 'דלג'){
