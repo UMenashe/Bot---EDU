@@ -226,13 +226,10 @@ async function sendGif(KeyWord,channelM){
 
 function Capsules(id) {
     let T;
-    for (let S of botData.student) {
-        if (id === S.id) {
-            T = S.type;
-        }
-    }
+    T = botData.student[id].capsule;
     return T;
 }
+
 function findLesson(channelM, everyone) {
     let date = new Date();
     if (date.getDay() === 6) {
@@ -367,6 +364,7 @@ client.on('messageReactionAdd', (reaction, user) => {
 client.on('message', async msg  =>  {
     try {
         if (msg.author.bot) return;
+        if(msg.channel.id !== '822410231664607232'){
         if (msg.content == 'השיעור הבא' || msg.content == 'שיעור הבא' || msg.content == 'מה השיעור הבא') {
             channelM = msg.channel;
             findLesson(channelM, false);
@@ -740,6 +738,18 @@ client.on('message', async msg  =>  {
             msg.reply('scheduled Message Started');
         }
 
+    }else if(msg.channel.id === '822410231664607232'){
+        let user = botData.student[msg.author.id].name;
+        let res;
+        let text = msg.content;
+        text = text.replace(' אברה','');
+        if (compareRes(text)) {
+            res = compareRes(text);
+            res = res.replace('user',user);
+          } else {
+            res = botData.alternative[Math.floor(Math.random() * botData.alternative.length)];
+          }
+          msg.channel.send(res);
 
         if (!(/[\u0590-\u05FF]/).test(msg.content)) {
             data = new FormData();
@@ -770,6 +780,7 @@ client.on('message', async msg  =>  {
                     else console.log(error.message);
                 });
         }
+    }
     } catch (error) {
         console.error(error)
     }
