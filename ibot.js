@@ -172,6 +172,19 @@ async function GetSolutions(bookObj,page,question,sq = null) {
     return json;
 }
 
+function compareRes(text){
+    let item ;
+    for(let x = 0 ; x < botData.responses.length ; x++){
+        for(let y = 0 ; y < botData.replies.length ; y++){
+            if(text.includes(botData.responses[x][y])){
+                item = botData.replies[x];
+                item = item[ Math.floor(Math.random() * item.length) ];
+            }
+        }
+    }
+    return item;
+}
+
 async function dafYomi(daf,massechet){
     let url = `http://www.daf-yomi.com/AjaxHandler.ashx?medialist=1&pagesize=5&page=1&massechet=${massechet}&medaf=${daf}&addaf=${daf}&safa=1&maggid=&chofshi=&sort=massechet&dir=1&ro=1614616432944`;
     let promis = await fetch(url,{
